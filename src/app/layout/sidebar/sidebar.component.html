@@ -1,0 +1,19 @@
+<ul class="nav flex-column">
+
+  <li *ngIf="auth.hasRole(['ADMIN', 'MANAGER'])">
+    <a routerLink="/dashboard" class="nav-link">Dashboard</a>
+  </li>
+
+  <li *ngIf="auth.hasRole(['ADMIN', 'MANAGER', 'STAFF', 'VIEWER'])">
+    <a routerLink="/inventory" class="nav-link">Inventory</a>
+  </li>
+
+  <li *ngIf="auth.hasRole(['ADMIN', 'VIEWER'])">
+    <a routerLink="/users" class="nav-link">Users</a>   
+  </li>
+
+  <li *ngIf="auth.hasRole(['ADMIN'])">
+    <a routerLink="/reports" class="nav-link">Reports</a>
+  </li>
+
+</ul>
