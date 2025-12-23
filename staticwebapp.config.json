@@ -4,7 +4,11 @@
     "exclude": [
       "/assets/*",
       "/*.css",
-      "/*.js"
+      "/*.js",
+      "/*.png",
+      "/*.jpg",
+      "/*.svg",
+      "/*.ico"
     ]
   }
 }
