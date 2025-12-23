@@ -4,7 +4,7 @@
   "scripts": {
     "ng": "ng",
     "start": "ng serve",
-    "build": "ng build",
+    "build": "ng build --output-path dist/k-latex",
     "watch": "ng build --watch --configuration development",
     "test": "ng test",
     "serve:ssr:K-Latex": "node dist/k-latex/server/server.mjs"
