@@ -1,5 +1,9 @@
 import { Injectable } from '@angular/core';
 import { Router } from '@angular/router';
+import { environment } from '../../../environments/environment';
+import { Observable, tap } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
+import { LoginResponse } from '../models/login-response.model';
 
 export type UserRole = 'ADMIN' | 'MANAGER' | 'STAFF' | 'VIEWER';
 
@@ -10,31 +14,32 @@ interface User {
 }
 
 @Injectable({
-  providedIn: 'root'
+  providedIn: 'root',
 })
 export class AuthService {
-
+  private baseUrl = `${environment.apiBaseUrl}/api/auth`;
   private users: User[] = [
-    { username: 'admin',   password: 'admin123',   role: 'ADMIN' },
+    { username: 'admin', password: 'admin123', role: 'ADMIN' },
     { username: 'manager', password: 'manager123', role: 'MANAGER' },
-    { username: 'staff',   password: 'staff123',   role: 'STAFF' },
-    { username: 'viewer',  password: 'viewer123',  role: 'VIEWER' }
+    { username: 'staff', password: 'staff123', role: 'STAFF' },
+    { username: 'viewer', password: 'viewer123', role: 'VIEWER' },
   ];
 
-  private currentUser: User | null = null;
+  private currentUser: LoginResponse | null = null;
 
-  constructor(private router: Router) {}
+  constructor(private router: Router, private http: HttpClient) {}
 
-  login(username: string, password: string): boolean {
-    const user = this.users.find(
-      u => u.username === username && u.password === password
-    );
-
-    if (user) {
-      this.currentUser = user;
-      return true;
-    }
-    return false;
+  login(username: string, password: string): Observable<LoginResponse> {
+    return this.http
+      .post<LoginResponse>(`${this.baseUrl}/login`, { username, password })
+      .pipe(
+        tap((response) => {
+          if (response.statusCode === 200 && response.isActive) {
+            this.currentUser = response;
+            localStorage.setItem('currentUser', JSON.stringify(response));
+          }
+        })
+      );
   }
 
   logout() {

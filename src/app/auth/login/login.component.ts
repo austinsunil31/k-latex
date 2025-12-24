@@ -8,34 +8,44 @@ import { AuthService } from '../../core/services/auth.service';
   selector: 'app-login',
   standalone: true,
   imports: [CommonModule, FormsModule],
-  templateUrl: './login.component.html'
+  templateUrl: './login.component.html',
 })
 export class LoginComponent {
-
   username = '';
   password = '';
   error = '';
 
-  constructor(
-    private authService: AuthService,
-    private router: Router
-  ) {}
+  constructor(private authService: AuthService, private router: Router) {}
 
   login() {
-    const success = this.authService.login(this.username, this.password);
+    this.authService.login(this.username, this.password).subscribe({
+      next: (res) => {
+        if (res.statusCode === 200) {
+          switch (res.role) {
+            case 'ADMIN':
+              this.router.navigate(['/dashboard']);
+              break;
 
-    if (!success) {
-      this.error = 'Invalid username or password';
-      return;
-    }
+            case 'MANAGER':
+              this.router.navigate(['/dashboard']);
+              break;
 
-    // Role-based redirect
-    const role = this.authService.getUserRole();
+            case 'STAFF':
+              this.router.navigate(['/inventory']);
+              break;
 
-    if (role === 'ADMIN' || role === 'MANAGER') {
-      this.router.navigate(['/dashboard']);
-    } else {
-      this.router.navigate(['/inventory']);
-    }
+            case 'VIEWER':
+              this.router.navigate(['/users']);
+              break;
+
+            default:
+              this.router.navigate(['/']);
+          }
+        }
+      },
+      error: () => {
+        alert('Invalid username or password');
+      },
+    });
   }
 }
