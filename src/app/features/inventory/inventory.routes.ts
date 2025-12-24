@@ -6,11 +6,11 @@ import { StockOutComponent } from './stock-out/stock-out.component';
 export const INVENTORY_ROUTES: Routes = [
   {
     path: '',
-    component: InventoryHomeComponent
+    component: StockInComponent
   },
   {
-    path: 'stock-in',
-    component: StockInComponent
+    path: 'inventory-home',
+    component: InventoryHomeComponent
   },
   {
     path: 'stock-out',
