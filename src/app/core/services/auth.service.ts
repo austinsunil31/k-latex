@@ -37,6 +37,8 @@ export class AuthService {
           if (response.statusCode === 200 && response.isActive) {
             this.currentUser = response;
             localStorage.setItem('currentUser', JSON.stringify(response));
+            localStorage.setItem('role', JSON.stringify(response.role));
+            localStorage.setItem('userId', JSON.stringify(response.userId));
           }
         })
       );

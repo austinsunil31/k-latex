@@ -35,5 +35,8 @@ updateSampleDrc(id: number, payload: any) {
   return this.http.put(`${this.baseUrl}/update-sample-drc/${id}`, payload);
 }
 
+getEntriesByDate(date: string) {
+  return this.http.get(`${this.baseUrl}/getentriesbydate?date=${date}`);
+}
 
 }

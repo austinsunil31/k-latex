@@ -8,14 +8,19 @@
 </div>
 
 <!-- ACTION BAR -->
-<div class="d-flex justify-content-between mb-3">
+<div class="d-flex justify-content-between mb-3 align-items-center">
   <input
     type="text"
     class="form-control w-50"
     placeholder="Search by client number..."
     [(ngModel)]="searchText"
   />
-
+ <input
+    type="date"
+    class="form-control w-auto me-2"
+    [(ngModel)]="selectedDate"
+    (change)="onDateChange()"
+  />
   <button
     class="btn btn-primary"
     data-bs-toggle="modal"
@@ -35,18 +40,24 @@
         <th>Client No</th>
         <th>Total Weight</th>
         <th>Dry Rubber Value</th>
+        <th>DRC</th>
         <th>Time</th>
         <th>Action</th>
       </tr>
     </thead>
 
     <tbody>
-      <tr *ngFor="let stock of filteredStocks; let i = index">
+      <tr
+    [ngClass]="{
+      'row-zero-drc': !stock.sample_drc || stock.sample_drc <= 0,
+      'row-positive-drc': stock.sample_drc > 0
+    }" *ngFor="let stock of filteredStocks; let i = index">
         <td>{{ i + 1 }}</td>
         <td>{{ stock.client_no }}</td>
         <td>{{ stock.total_weight }}</td>
         <td>{{ stock.final_value }}</td>
-        <td>{{ stock.created_on | date:'dd MMM yyyy, hh:mm a' }}</td>
+        <td>{{ stock.sample_drc }}</td>
+        <td>{{ stock.created_on | date : "dd MMM yyyy, hh:mm a" }}</td>
         <td>
           <button
             class="btn btn-info btn-sm"
@@ -58,7 +69,7 @@
           </button>
           <button
             *ngIf="stock.sample_drc < 1"
-            class="btn btn-warning btn-sm"
+            class="btn btn-warning btn-sm edit_lastex"
             (click)="openEditModal(stock)"
             data-bs-toggle="modal"
             data-bs-target="#editStockModal"
@@ -149,7 +160,11 @@
       </div>
 
       <div class="modal-footer">
-        <button class="btn btn-secondary" data-bs-dismiss="modal">
+        <button
+          (click)="resetLatexPopup()"
+          class="btn btn-secondary"
+          data-bs-dismiss="modal"
+        >
           Cancel
         </button>
 
@@ -222,7 +237,6 @@
     </div>
   </div>
 </div>
-
 
 <!-- EDIT DRC MODAL -->
 <div class="modal fade" id="editDrcModal" tabindex="-1">
