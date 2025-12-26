@@ -1,8 +1,9 @@
-<!-- HEADER -->
-<div class="d-flex justify-content-between align-items-center p-3 bg-dark text-white rounded mb-4">
+<div
+  class="d-flex justify-content-between align-items-center p-3 bg-dark text-white rounded mb-4"
+>
   <h5 class="mb-0">📦 Stock In (Today)</h5>
   <span>
-    {{ currentTime | date:'dd MMM yyyy, hh:mm:ss a' }}
+    {{ currentTime | date : "dd MMM yyyy, hh:mm:ss a" }}
   </span>
 </div>
 
@@ -11,14 +12,16 @@
   <input
     type="text"
     class="form-control w-50"
-    placeholder="Search by item or supplier..."
+    placeholder="Search by client number..."
     [(ngModel)]="searchText"
   />
 
   <button
     class="btn btn-primary"
     data-bs-toggle="modal"
-    data-bs-target="#addStockModal">
+    (click)="onPupUpOpenClick()"
+    data-bs-target="#addStockModal"
+  >
     + Add Stock
   </button>
 </div>
@@ -29,25 +32,45 @@
     <thead class="table-light">
       <tr>
         <th>#</th>
-        <th>Item</th>
-        <th>Quantity</th>
-        <th>Supplier</th>
+        <th>Client No</th>
+        <th>Total Weight</th>
+        <th>Dry Rubber Value</th>
         <th>Time</th>
+        <th>Action</th>
       </tr>
     </thead>
 
     <tbody>
       <tr *ngFor="let stock of filteredStocks; let i = index">
         <td>{{ i + 1 }}</td>
-        <td>{{ stock.itemName }}</td>
-        <td>{{ stock.quantity }}</td>
-        <td>{{ stock.supplier }}</td>
-        <td>{{ stock.time }}</td>
+        <td>{{ stock.client_no }}</td>
+        <td>{{ stock.total_weight }}</td>
+        <td>{{ stock.final_value }}</td>
+        <td>{{ stock.created_on | date : "shortTime" }}</td>
+        <td>
+          <button
+            class="btn btn-info btn-sm"
+            (click)="openEditDrcModal(stock)"
+            data-bs-toggle="modal"
+            data-bs-target="#editDrcModal"
+          >
+            Edit DRC
+          </button>
+          <button
+            *ngIf="stock.sample_drc < 1"
+            class="btn btn-warning btn-sm"
+            (click)="openEditModal(stock)"
+            data-bs-toggle="modal"
+            data-bs-target="#editStockModal"
+          >
+            Edit Latex
+          </button>
+        </td>
       </tr>
 
       <tr *ngIf="filteredStocks.length === 0">
         <td colspan="5" class="text-center text-muted">
-          No stock entries found
+          No stock entries found today
         </td>
       </tr>
     </tbody>
@@ -58,26 +81,129 @@
 <div class="modal fade" id="addStockModal" tabindex="-1">
   <div class="modal-dialog">
     <div class="modal-content">
-
       <div class="modal-header">
-        <h5 class="modal-title">Add Stock Entry</h5>
-        <button class="btn-close" data-bs-dismiss="modal"></button>
+        <h5 class="modal-title">Add Latex Entry</h5>
+        <button
+          class="btn-close"
+          data-bs-dismiss="modal"
+          (click)="resetLatexPopup()"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Client No (Searchable) -->
+        <div class="mb-3">
+          <label class="form-label">Client No</label>
+          <input
+            class="form-control"
+            list="clientNoList"
+            [(ngModel)]="selectedClientNo"
+            (change)="onClientNoChange()"
+            placeholder="Search client no"
+          />
+
+          <datalist id="clientNoList">
+            <option *ngFor="let c of clients" [value]="c.client_no"></option>
+          </datalist>
+        </div>
+
+        <!-- Client Name (Searchable) -->
+        <div class="mb-3">
+          <label class="form-label">Client Name</label>
+          <input
+            class="form-control"
+            list="clientNameList"
+            [(ngModel)]="selectedClientName"
+            (change)="onClientNameChange()"
+            placeholder="Search client name"
+          />
+
+          <datalist id="clientNameList">
+            <option *ngFor="let c of clients" [value]="c.name"></option>
+          </datalist>
+        </div>
+
+        <!-- Latex Quantity -->
+        <div class="mb-3">
+          <label class="form-label">Latex Quantity (Kg)</label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="latexQuantity"
+            min="0"
+            step="0.01"
+            placeholder="Enter quantity"
+          />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">No Of Can </label>
+          <input
+            type="number"
+            class="form-control"
+            [(ngModel)]="noOfCan"
+            min="1"
+            placeholder="Enter no of cans"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+
+        <button
+          class="btn btn-success"
+          [disabled]="!isFormValid()"
+          (click)="saveLatexEntry()"
+          data-bs-dismiss="modal"
+        >
+          Save
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- EDIT STOCK MODAL -->
+<div class="modal fade" id="editStockModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit Latex Entry</h5>
+        <button
+          class="btn-close"
+          data-bs-dismiss="modal"
+          (click)="resetEdit()"
+        ></button>
       </div>
 
       <div class="modal-body">
         <div class="mb-3">
-          <label class="form-label">Item Name</label>
-          <input type="text" class="form-control" [(ngModel)]="newStock.itemName">
+          <label class="form-label">Client No</label>
+          <input class="form-control" [(ngModel)]="editClientNo" readonly />
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Quantity</label>
-          <input type="number" class="form-control" [(ngModel)]="newStock.quantity">
+          <label class="form-label">Latex Quantity (Kg)</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="editLatexQuantity"
+            class="form-control"
+          />
         </div>
 
         <div class="mb-3">
-          <label class="form-label">Supplier</label>
-          <input type="text" class="form-control" [(ngModel)]="newStock.supplier">
+          <label class="form-label">No Of Can</label>
+          <input
+            type="number"
+            min="1"
+            [(ngModel)]="editCanCount"
+            class="form-control"
+          />
         </div>
       </div>
 
@@ -87,13 +213,60 @@
         </button>
         <button
           class="btn btn-success"
+          (click)="updateLatexEntry()"
           data-bs-dismiss="modal"
-          (click)="addStock()">
-          Save
+        >
+          Update Latex
         </button>
       </div>
-
     </div>
   </div>
 </div>
 
+
+<!-- EDIT DRC MODAL -->
+<div class="modal fade" id="editDrcModal" tabindex="-1">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title">Edit DRC</h5>
+        <button
+          class="btn-close"
+          data-bs-dismiss="modal"
+          (click)="resetEdit()"
+        ></button>
+      </div>
+
+      <div class="modal-body">
+        <div class="mb-3">
+          <label class="form-label">Client No</label>
+          <input class="form-control" [(ngModel)]="editClientNo" readonly />
+        </div>
+
+        <div class="mb-3">
+          <label class="form-label">DRC</label>
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            [(ngModel)]="drcWeight"
+            class="form-control"
+          />
+        </div>
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          Cancel
+        </button>
+        <button
+          class="btn btn-success"
+          (click)="updateDrcEntry()"
+          data-bs-dismiss="modal"
+        >
+          Update DRC
+        </button>
+      </div>
+    </div>
+  </div>
+</div>

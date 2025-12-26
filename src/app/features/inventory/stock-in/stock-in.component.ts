@@ -1,6 +1,9 @@
 import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { LatexClientService } from '../../../core/services/latex-client.service';
+import { LatexClient } from '../../../core/models/latex-clients.model';
+import { ToastService } from '../../../core/services/toast.service.ts.service';
 
 interface StockEntry {
   itemName: string;
@@ -17,42 +20,24 @@ interface StockEntry {
   styleUrl: './stock-in.component.scss'
 })
 export class StockInComponent implements OnInit, OnDestroy {
+  constructor(private latexclientService: LatexClientService,private toastService: ToastService) {}
+clients: LatexClient[] = [];
+isHandledByClient: boolean | null = null;
+currentTime: Date = new Date();
+timer!: any;
+selectedClientNo: string = '';
+selectedClientName: string = '';
+latexQuantity: number | null = null;
+noOfCan: number | null = null;
+searchText = '';
+todayStocks: any[] = [];
+editId: number | null = null;
+editClientNo: string = '';
+editClientName: string = '';
+editLatexQuantity: number | null = null;
+editCanCount: number | null = null;
+drcWeight: number | null = null;
 
-  currentTime: Date = new Date();
-  timer!: any;
-
-  searchText = '';
-
-stockEntries: StockEntry[] = [
-  { itemName: 'Rice Bag', quantity: 50, supplier: 'ABC Traders', time: '09:05:12 AM' },
-  { itemName: 'Wheat Flour', quantity: 30, supplier: 'Golden Mills', time: '09:15:45 AM' },
-  { itemName: 'Sugar', quantity: 25, supplier: 'Sweet Suppliers', time: '09:22:10 AM' },
-  { itemName: 'Salt', quantity: 40, supplier: 'Sea Foods Ltd', time: '09:30:33 AM' },
-  { itemName: 'Cooking Oil', quantity: 20, supplier: 'Sunrise Oils', time: '09:40:50 AM' },
-  { itemName: 'Tea Powder', quantity: 15, supplier: 'Tata Tea', time: '09:48:05 AM' },
-  { itemName: 'Coffee Powder', quantity: 10, supplier: 'Bru Coffee', time: '09:55:19 AM' },
-  { itemName: 'Milk Packets', quantity: 60, supplier: 'Milma', time: '10:02:41 AM' },
-  { itemName: 'Curd', quantity: 35, supplier: 'Milma', time: '10:10:08 AM' },
-  { itemName: 'Butter', quantity: 18, supplier: 'Amul', time: '10:18:54 AM' },
-  { itemName: 'Cheese', quantity: 22, supplier: 'Amul', time: '10:25:36 AM' },
-  { itemName: 'Eggs', quantity: 100, supplier: 'Farm Fresh', time: '10:32:11 AM' },
-  { itemName: 'Chicken', quantity: 45, supplier: 'Fresh Meats', time: '10:40:59 AM' },
-  { itemName: 'Fish', quantity: 28, supplier: 'Ocean Catch', time: '10:48:22 AM' },
-  { itemName: 'Potatoes', quantity: 70, supplier: 'Veg Mart', time: '10:55:40 AM' },
-  { itemName: 'Onions', quantity: 65, supplier: 'Veg Mart', time: '11:03:18 AM' },
-  { itemName: 'Tomatoes', quantity: 55, supplier: 'Green Farms', time: '11:10:27 AM' },
-  { itemName: 'Chilli Powder', quantity: 12, supplier: 'Spice Hub', time: '11:18:44 AM' },
-  { itemName: 'Turmeric Powder', quantity: 14, supplier: 'Spice Hub', time: '11:25:59 AM' },
-  { itemName: 'Eggs', quantity: 100, supplier: 'Farm Fresh', time: '10:32:11 AM' },
-  { itemName: 'Chicken', quantity: 45, supplier: 'Fresh Meats', time: '10:40:59 AM' },
-  { itemName: 'Fish', quantity: 28, supplier: 'Ocean Catch', time: '10:48:22 AM' },
-  { itemName: 'Potatoes', quantity: 70, supplier: 'Veg Mart', time: '10:55:40 AM' },
-  { itemName: 'Onions', quantity: 65, supplier: 'Veg Mart', time: '11:03:18 AM' },
-  { itemName: 'Tomatoes', quantity: 55, supplier: 'Green Farms', time: '11:10:27 AM' },
-  { itemName: 'Chilli Powder', quantity: 12, supplier: 'Spice Hub', time: '11:18:44 AM' },
-  { itemName: 'Turmeric Powder', quantity: 14, supplier: 'Spice Hub', time: '11:25:59 AM' },
-  { itemName: 'Garam Masala', quantity: 9, supplier: 'Everest Spices', time: '11:33:07 AM' }
-];
 
   // modal form model
   newStock: StockEntry = {
@@ -63,6 +48,7 @@ stockEntries: StockEntry[] = [
   };
 
   ngOnInit() {
+      this.getTodayEntries();
     this.timer = setInterval(() => {
       this.currentTime = new Date();
     }, 1000);
@@ -72,53 +58,181 @@ stockEntries: StockEntry[] = [
     clearInterval(this.timer);
   }
 
-  addStock() {
-    const now = new Date();
-    this.newStock.time = now.toLocaleTimeString();
-
-    this.stockEntries.unshift({ ...this.newStock });
-
-    // reset form
-    this.newStock = {
-      itemName: '',
-      quantity: 0,
-      supplier: '',
-      time: ''
-    };
-  }
 
   get filteredStocks() {
-    return this.stockEntries.filter(stock =>
-      stock.itemName.toLowerCase().includes(this.searchText.toLowerCase()) ||
-      stock.supplier.toLowerCase().includes(this.searchText.toLowerCase())
-    );
+  if (!this.searchText) {
+    return this.todayStocks;
   }
 
-  saveStock() {
-  if (!this.newStock.itemName || !this.newStock.quantity) {
-    alert('Item name and quantity are required');
+  const text = this.searchText.toLowerCase();
+
+  return this.todayStocks.filter(stock =>
+    (stock.client_no?.toLowerCase().includes(text)) ||
+    (stock.total_weight?.toString().includes(text)) ||
+    (stock.final_value?.toString().includes(text))
+  );
+}
+
+ 
+
+onPupUpOpenClick()
+{
+this.getAllClients()
+}
+
+getAllClients(){
+  this.latexclientService.getAllClients().subscribe({
+  next: (res) => {
+    this.clients = res.data;
+    console.log(this.clients);
+  },
+  error: (err) => {
+    console.error(err);
+  }
+});
+}
+
+onClientNoChange() {
+  const client = this.clients.find(c => c.client_no === this.selectedClientNo);
+  if (client) {
+    this.selectedClientName = client.name;
+    this.isHandledByClient = client.isHandledByClient
+  } else {
+    this.toastService.show('Client not found');
+  }
+}
+
+onClientNameChange() {
+  const client = this.clients.find(c => c.name === this.selectedClientName);
+  if (client) {
+    this.selectedClientNo = client.client_no;
+    this.isHandledByClient = client.isHandledByClient
+  } else {
+    this.toastService.show('Client not found');
+  }
+}
+
+isFormValid(): boolean {
+  return (
+    !!this.selectedClientNo &&
+    !!this.selectedClientName &&
+    this.latexQuantity !== null &&
+    this.latexQuantity > 0 &&
+    this.noOfCan !== null && this.noOfCan > 0 && this.isHandledByClient != null
+  );
+}
+
+saveLatexEntry() {
+  const payload = {
+    client_no: this.selectedClientNo,
+    clientName: this.selectedClientName,
+    total_weight: this.latexQuantity,
+    can_count: this.noOfCan,
+    //Sample_drc: 5.43,
+    isHandledByClient: this.isHandledByClient
+  };
+
+  console.log('Submitting latex entry', payload);
+
+  this.latexclientService.addLatexStockIn(payload).subscribe({
+    next: (response) => {
+
+      alert('Latex entry saved successfully!');
+
+      this.resetLatexPopup();
+    },
+    error: (error) => {
+      console.error('Error saving entry:', error);
+
+      alert('Failed to save latex entry. Try again.');
+    }
+  });
+}
+
+
+resetLatexPopup() {
+  this.selectedClientNo = '';
+  this.selectedClientName = '';
+  this.latexQuantity = null;
+  this.noOfCan = 1;
+  this.isHandledByClient = null
+}
+
+getTodayEntries() {
+  this.latexclientService.getTodayStockEntries().subscribe({
+    next: (response) => {
+      this.todayStocks = response.data;
+    },
+    error: () => {
+      this.todayStocks = [];
+    }
+  });
+}
+
+openEditModal(stock: any) {
+  this.editId = stock.id;
+  this.editClientNo = stock.client_no;
+  this.editClientName = stock.name; // Ensure backend sends name
+  this.editLatexQuantity = stock.total_weight;
+  this.editCanCount = stock.can_count;
+}
+
+updateLatexEntry() {
+  const payload = {
+    id: this.editId,
+    total_weight: this.editLatexQuantity,
+    can_count: this.editCanCount
+  };
+
+  this.latexclientService.updateLatexStock(payload).subscribe({
+    next: () => {
+      this.toastService.show("Entry Updated Successfully!");
+      this.getTodayEntries();
+      this.resetEdit();
+    },
+    error: () => {
+      this.toastService.show("Failed to update entry!");
+    }
+  });
+}
+
+resetEdit() {
+  this.editId = null;
+  this.editClientNo = '';
+  this.editClientName = '';
+  this.editLatexQuantity = null;
+  this.editCanCount = null;
+    this.drcWeight = null;
+}
+
+updateDrcEntry() {
+  if (!this.editId || !this.drcWeight) {
+    this.toastService.show("Invalid DRC input!");
     return;
   }
 
-  const now = new Date();
-
-  const entry = {
-    itemName: this.newStock.itemName,
-    quantity: this.newStock.quantity,
-    supplier: this.newStock.supplier,
-    time: now.toLocaleTimeString()
+  const payload = {
+    Sample_Drc: this.drcWeight,
   };
 
-  // Add to top of table
-  this.stockEntries.unshift(entry);
-
-  // Reset form
-  this.newStock = {
-    itemName: '',
-    quantity: 0,
-    supplier: '',
-    time: ''
-  };
+  this.latexclientService.updateSampleDrc(this.editId, payload).subscribe({
+    next: () => {
+      this.toastService.show("DRC updated successfully!");
+      this.getTodayEntries();
+      this.resetEdit();
+    },
+    error: () => {
+      this.toastService.show("Failed to update DRC!");
+    }
+  });
 }
+
+
+openEditDrcModal(stock: any) {
+  this.editId = stock.id;
+  this.editClientNo = stock.client_no;
+  this.drcWeight = 0; 
+}
+
 
 }
