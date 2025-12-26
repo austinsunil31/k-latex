@@ -46,7 +46,7 @@
         <td>{{ stock.client_no }}</td>
         <td>{{ stock.total_weight }}</td>
         <td>{{ stock.final_value }}</td>
-        <td>{{ stock.created_on | date : "shortTime" }}</td>
+        <td>{{ stock.created_on | date:'dd MMM yyyy, hh:mm a' }}</td>
         <td>
           <button
             class="btn btn-info btn-sm"
