@@ -137,8 +137,9 @@ export class StockInComponent implements OnInit, OnDestroy {
 
     this.latexclientService.addLatexStockIn(payload).subscribe({
       next: (response) => {
-        this.getTodayEntries();
-        this.resetLatexPopup();
+        this.selectedDate == ''
+          ? this.getTodayEntries()
+          : this.getEntriesByDate(this.selectedDate);        this.resetLatexPopup();
         this.toastService.show('Entry Added Successfully!');
       },
       error: (error) => {
@@ -212,8 +213,9 @@ export class StockInComponent implements OnInit, OnDestroy {
     this.latexclientService.updateLatexStock(payload).subscribe({
       next: () => {
         this.toastService.show('Entry Updated Successfully!');
-        this.getTodayEntries();
-        this.resetEdit();
+        this.selectedDate == ''
+          ? this.getTodayEntries()
+          : this.getEntriesByDate(this.selectedDate);        this.resetEdit();
       },
       error: () => {
         this.toastService.show('Failed to update entry!');
