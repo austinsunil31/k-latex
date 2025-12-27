@@ -1,1 +1,78 @@
-<p>reports-home works!</p>
+<div class="container mt-4">
+
+  <h4 class="mb-4">📊 Reports</h4>
+
+  <form #reportForm="ngForm" class="row g-3">
+
+    <!-- From Date -->
+    <div class="col-md-3">
+      <label class="form-label">From Date *</label>
+      <input type="date" class="form-control"
+             name="fromDate" [(ngModel)]="fromDate" required>
+    </div>
+
+    <!-- To Date -->
+    <div class="col-md-3">
+      <label class="form-label">To Date *</label>
+      <input type="date" class="form-control"
+             name="toDate" [(ngModel)]="toDate" required>
+    </div>
+
+    <!-- Client No (optional) -->
+    <div class="col-md-3">
+  <label class="form-label">Client</label>
+  <select class="form-select"
+          [(ngModel)]="clientNo"
+          name="clientNo" required>
+    <option *ngFor="let client of clients" [value]="client.client_no">
+      {{ client.client_no }} - {{ client.name }}
+    </option>
+  </select>
+</div>
+
+
+    <div class="col-md-3 d-flex align-items-end">
+      <button class="btn btn-primary w-100"
+              [disabled]="!reportForm.valid"
+              (click)="onSearch()">
+        Search
+      </button>
+    </div>
+<button class="btn btn-success me-2" (click)="exportToExcel()">Export Excel</button>
+<button class="btn btn-danger" (click)="exportToPDF()">Export PDF</button>
+
+  </form>
+
+  <!-- Results -->
+  <div class="mt-4" *ngIf="reports && reports.length > 0">
+    <h6>Results: {{ reports.length }} Records</h6>
+
+    <table class="table table-bordered mt-3">
+      <thead>
+        <tr>
+            <th (click)="sortTable('Client_no')">Client No ⬍</th>
+            <th (click)="sortTable('Created_on')">Created_on ⬍</th>
+            <th>Total Weight</th>
+            <th>Latex Weight</th>
+            <th>Sample DRC</th>
+            <th>Dry Rubber Value</th>
+            <th>Processing Fees</th>
+            <th>Final Value</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let report of reports">
+          <td>{{ report.client_no }}</td>
+          <td>{{ report.created_on | date : "dd MMM yyyy, hh:mm a" }}</td>
+          <td>{{ report.total_weight }}</td>
+          <td>{{ report.latex_weight }}</td>
+          <td>{{ report.sample_drc }}</td>
+          <td>{{ report.dry_rubber_value }}</td>
+          <td>{{ report.processing_fees }}</td>
+          <td>{{ report.final_value }}</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+</div>

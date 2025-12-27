@@ -1,11 +1,194 @@
-import { Component } from '@angular/core';
+import { Component, OnInit } from '@angular/core';
+import { ReportService } from '../../../core/services/report.service';
+import { ToastService } from '../../../core/services/toast.service.ts.service';
+import { FormsModule } from '@angular/forms';
+import { CommonModule } from '@angular/common';
+import * as XLSX from 'xlsx';
+import jsPDF from 'jspdf';
+import autoTable from 'jspdf-autotable';
+import { LatexClientService } from '../../../core/services/latex-client.service';
 
 @Component({
   selector: 'app-reports-home',
-  imports: [],
+  imports: [FormsModule,CommonModule],
+  standalone: true,
   templateUrl: './reports-home.component.html',
   styleUrl: './reports-home.component.scss'
 })
-export class ReportsHomeComponent {
+export class ReportsHomeComponent implements OnInit{
 
+  fromDate!: string;
+  toDate!: string;
+  clientNo: string = '';
+  reports: any[] = [];
+clients: any[] = [];
+sortColumn = '';
+sortDirection: 'asc' | 'desc' = 'asc';
+  totals: any;
+  constructor(
+    private reportService: ReportService,
+    private toast: ToastService,
+    private latexclientService : LatexClientService
+  ) {}
+  ngOnInit(): void {
+    this.getAllClients();
+  }
+
+  onSearch() {
+    if (!this.fromDate || !this.toDate) {
+      this.toast.show("Both dates are required!");
+      return;
+    }
+
+    const payload: any = {
+      fromDate: this.fromDate,
+      toDate: this.toDate
+    };
+
+    if (this.clientNo?.trim() !== '') {
+      payload.clientNo = this.clientNo.trim();
+    }
+
+    this.reportService.getReport(payload).subscribe({
+      next: (res: any) => {
+        this.reports = res.data;
+        this.totals = res.totals;
+      },
+      error: () => {
+        this.toast.show("Failed to load reports");
+      }
+    });
+  }
+  sortTable(column: string) {
+  if (this.sortColumn === column) {
+    this.sortDirection = this.sortDirection === 'asc' ? 'desc' : 'asc';
+  } else {
+    this.sortColumn = column;
+    this.sortDirection = 'asc';
+  }
+
+  this.reports.sort((a, b) => {
+    const valA = a[column];
+    const valB = b[column];
+
+    return this.sortDirection === 'asc'
+      ? valA > valB ? 1 : -1
+      : valA < valB ? 1 : -1;
+  });
+}
+
+
+
+exportToExcel() {
+  const ws = XLSX.utils.json_to_sheet(this.reports);
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'Report');
+  XLSX.writeFile(wb, 'Latex_Report.xlsx');
+}
+
+exportToPDF() {
+  const doc = new jsPDF({
+    orientation: "portrait",
+    unit: "mm",
+    format: "a4"
+  });
+
+  // 🔹 Report Header
+  doc.setFont("helvetica", "bold");
+  doc.setFontSize(16);
+  doc.text("KAPCO Latex Stock Report", 105, 12, { align: "center" });
+
+  doc.setFont("helvetica", "normal");
+  doc.setFontSize(10);
+  doc.text(`Client: ${this.clientNo || "All Clients"}`, 14, 20);
+  doc.text(
+    `Date Range: ${new Date(this.fromDate).toLocaleDateString()} - ${new Date(this.toDate).toLocaleDateString()}`,
+    14,
+    26
+  );
+
+  // 🔹 Table
+  autoTable(doc, {
+    startY: 32,
+    headStyles: { fillColor: [30, 30, 30], textColor: 255, fontStyle: "bold" },
+    styles: { fontSize: 9, cellPadding: 3 },
+    head: [['Client No', 'Date', 'Total Wt', 'Latex Wt', 'DRC', 'Proc. Fee', 'DR Value', 'Final Value']],
+    body: this.reports.map(r => [
+      r.client_no || "",
+      new Date(r.created_on).toLocaleDateString(),
+      (r.total_weight ?? 0).toFixed(2),
+      (r.latex_weight ?? 0).toFixed(2),
+      r.sample_drc != null ? r.sample_drc.toFixed(2) : "0.00",
+      (r.processing_fees ?? 0).toFixed(2),
+      (r.dry_rubber_value ?? 0).toFixed(2),
+      (r.final_value ?? 0).toFixed(2)
+    ]),
+    theme: 'grid',
+    bodyStyles: { valign: 'middle' },
+    columnStyles: {
+      2: { halign: 'right' },
+      3: { halign: 'right' },
+      4: { halign: 'right' },
+      5: { halign: 'right' },
+      6: { halign: 'right' },
+      7: { halign: 'right' },
+    },
+  });
+
+  const endY = (doc as any).lastAutoTable.finalY + 8;
+
+  // 🔹 Summary Totals Table (No ₹ Symbol)
+  autoTable(doc, {
+    startY: endY,
+    theme: "grid",
+    headStyles: { fillColor: [0, 102, 204], textColor: 255, fontStyle: "bold" },
+    styles: { fontSize: 10 },
+    columnStyles: {
+      0: { halign: "left" },
+      1: { halign: "right" },
+    },
+    head: [["Description", "Amount"]],
+    body: [
+      ["Total Dry Rubber Value", (this.totals.total_Dry_rubber_value ?? 0).toFixed(2)],
+      [`Processing Fees (${(this.totals.total_Total_weight ?? 0).toFixed(2)} kg Latex)`,
+       (this.totals.total_processing_fees ?? 0).toFixed(2)],
+    ],
+    foot: [
+      [
+        { content: "Final Value", styles: { fontStyle: "bold", fillColor: [0, 150, 0], textColor: 255 } },
+        { content: (this.totals.total_Final_value ?? 0).toFixed(2),
+          styles: { fontStyle: "bold", fillColor: [0, 150, 0], textColor: 255, halign: "right" } }
+      ]
+    ]
+  });
+
+  const footerY = (doc as any).lastAutoTable.finalY + 12;
+
+  // 🔹 Footer
+  doc.setFont("helvetica", "italic");
+  doc.setFontSize(9);
+  doc.text("Generated by KAPCO System", 14, footerY);
+  doc.text("Authorized Signature ___________________", 120, footerY + 10);
+
+  // 🔹 Save
+  const fileName = `${this.clientNo || "All"}-Latex-Report.pdf`;
+  doc.save(fileName);
+}
+
+
+
+
+
+
+  
+getAllClients() {
+  this.latexclientService.getAllClients().subscribe({
+    next: (res) => {
+      this.clients = res.data;
+    },
+    error: (err) => {
+      console.error("Failed to fetch clients:", err);
+    },
+  });
+}
 }

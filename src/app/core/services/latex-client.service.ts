@@ -39,4 +39,12 @@ getEntriesByDate(date: string) {
   return this.http.get(`${this.baseUrl}/getentriesbydate?date=${date}`);
 }
 
+getAllActiveClients(): Observable<any> {
+  return this.http.get(`${this.baseUrl}/activeclients`);
+}
+
+addClient(payload: any): Observable<any> {
+  return this.http.post(`${this.baseUrl}/addclient`, payload);
+}
+
 }

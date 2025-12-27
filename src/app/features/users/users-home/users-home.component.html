@@ -1,1 +1,64 @@
-<p>users-home works!</p>
+<div class="container mt-4">
+
+  <h4 class="mb-4">Client Management</h4>
+
+  <!-- Add Client Form -->
+  <div class="card p-3 mb-4">
+    <div class="row g-3">
+
+      <div class="col-md-4">
+        <label>Name *</label>
+        <input type="text" class="form-control" [(ngModel)]="newClient.name">
+      </div>
+
+      <div class="col-md-4">
+        <label>Mobile *</label>
+        <input type="text" class="form-control" [(ngModel)]="newClient.mobile_num">
+      </div>
+
+      <div class="col-md-4">
+        <label>Plot Location *</label>
+        <input type="text" class="form-control" [(ngModel)]="newClient.plot_location">
+      </div>
+
+      <div class="col-md-4">
+        <input type="checkbox" [(ngModel)]="newClient.isHandledByClient"> Handled By Client?
+      </div>
+
+      <div class="col-md-4 mt-4">
+        <button class="btn btn-success w-100" (click)="addClient()">➕ Add Client</button>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- Search -->
+  <input type="text" class="form-control mb-3"
+         placeholder="Search by client name or number..."
+         [(ngModel)]="searchText" (input)="onSearch()">
+
+  <!-- Active Clients Table -->
+  <table class="table table-striped table-bordered">
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Client No</th>
+        <th>Name</th>
+        <th>Mobile</th>
+        <th>Plot Location</th>
+        <th>Handled By Client</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let c of filteredClients; let i = index">
+        <td>{{ i + 1 }}</td>
+        <td>{{ c.client_no }}</td>
+        <td>{{ c.name }}</td>
+        <td>{{ c.mobile_num }}</td>
+        <td>{{ c.plot_location }}</td>
+        <td>{{ c.isHandledByClient ? 'Yes' : 'No' }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
