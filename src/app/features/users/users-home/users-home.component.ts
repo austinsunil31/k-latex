@@ -21,7 +21,7 @@ export class UsersHomeComponent implements OnInit {
     name: '',
     mobile_num: '',
     plot_location: '',
-    isHandledByClient: null
+    isHandledByClient: false
   };
 
   constructor(
@@ -60,7 +60,7 @@ export class UsersHomeComponent implements OnInit {
     this.clientService.addClient(this.newClient).subscribe({
       next: () => {
         this.toast.show("Client added successfully!");
-        this.newClient = { name: '', mobile_num: '', plot_location: '', isHandledByClient: null };
+        this.newClient = { name: '', mobile_num: '', plot_location: '', isHandledByClient: false };
         this.loadClients();
       },
       error: () => this.toast.show("Error adding client!")

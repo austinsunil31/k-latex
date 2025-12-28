@@ -1,1 +1,58 @@
-<p>Admin-dashboard-home works!</p>
+<div class="p-3">
+
+  <!-- Add Button -->
+  <button class="btn btn-primary mb-3" data-bs-toggle="modal" data-bs-target="#addLatexRateModal">
+    ➕ Add Latex Rate for Today
+  </button>
+
+  <!-- Table -->
+  <table class="table table-bordered table-striped">
+    <thead class="table-dark">
+      <tr>
+        <th>Date</th>
+        <th>Latex Rate (₹)</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let rate of last10Rates">
+        <td>{{ rate.rate_Date | date:'dd MMM yyyy' }}</td>
+        <td>{{ rate.latex_Rate }}</td>
+      </tr>
+    </tbody>
+  </table>
+</div>
+
+
+<!-- 🟦 Add Latex Rate Modal -->
+<div class="modal fade" id="addLatexRateModal" tabindex="-1" aria-labelledby="addLatexRateModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+
+      <div class="modal-header bg-dark text-white">
+        <h5 class="modal-title" id="addLatexRateModalLabel">Add Latex Rate (Today)</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+      </div>
+
+      <div class="modal-body">
+
+        <div class="row g-3">
+          <div class="col-12">
+            <label class="form-label">Latex Rate *</label>
+            <input type="number" class="form-control" [(ngModel)]="todayLatexRate" placeholder="Enter rate value">
+          </div>
+        </div>
+
+      </div>
+
+      <div class="modal-footer">
+        <button class="btn btn-secondary" data-bs-dismiss="modal">
+          ❌ Cancel
+        </button>
+        <button class="btn btn-success" (click)="saveLatexRate()">
+          ✔ Save
+        </button>
+      </div>
+
+    </div>
+  </div>
+</div>

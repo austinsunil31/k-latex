@@ -250,8 +250,13 @@ export class StockInComponent implements OnInit, OnDestroy {
           : this.getEntriesByDate(this.selectedDate);
         this.resetEdit();
       },
-      error: () => {
-        this.toastService.show('Failed to update DRC!');
+        error: (err) => {
+  const backendMessage =
+    err.error?.message || // Your backend format
+    err.error?.Message || // Backup case if capitalized
+    'Failed to update DRC!';
+
+  this.toastService.show(backendMessage);
       },
     });
   }
